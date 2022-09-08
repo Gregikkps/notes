@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:notes_app/data/models/note.dart';
+import 'package:notes_app/main.dart';
+import 'package:sqflite/sqflite.dart';
 
 class AddNoteScreen extends StatefulWidget {
   const AddNoteScreen({super.key, required this.title});
@@ -19,8 +22,22 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         centerTitle: true,
         actions: [
           TextButton(
-            child: Text('Save'),
-            onPressed: () {},
+            child: const Text('Save'),
+            onPressed: () {
+              print(noteController.text);
+              print(DateTime.now());
+
+              Future<int> add(Grocery grocery) async {
+                Database db = await DatabaseHelper.instance.database;
+                return await db.insert('notes', grocery.toMap());
+              }
+
+              add(Grocery(
+                  date: DateTime.now().toIso8601String(),
+                  name: noteController.text));
+
+              setState(() {});
+            },
           )
         ],
       ),
