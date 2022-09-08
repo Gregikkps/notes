@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:notes_app/data/models/note.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:notes_app/data/notes_cubit.dart';
 import 'package:notes_app/screens/note_list.dart';
-import 'package:notes_app/utils/note.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -28,7 +28,10 @@ class MyApp extends StatelessWidget {
           backgroundColor: Colors.white,
         ),
       ),
-      home: const NotesPage(title: 'Notes'),
+      home: BlocProvider(
+        create: (_) => NotesCubit(),
+        child: const NotesPage(title: 'Notes'),
+      ),
     );
   }
 }
@@ -52,18 +55,17 @@ class DatabaseHelper {
   Future _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE notes(
-          date TEXT,
-          name TEXT
+          content TEXT,
+          createdAt TEXT
       )
       ''');
   }
 
-  Future<List<Grocery>> getGroceries() async {
-    Database db = await instance.database;
-    var groceries = await db.query('notes', orderBy: 'date');
-    List<Grocery> groceryList = groceries.isNotEmpty
-        ? groceries.map((c) => Grocery.fromMap(c)).toList()
-        : [];
-    return groceryList;
-  }
+  // Future<List<Note>> getNotes() async {
+  //   Database db = await instance.database;
+  //   var notes = await db.query('notes', orderBy: 'date');
+  //   List<Note> noteList =
+  //       notes.isNotEmpty ? notes.map((c) => Note.fromMap(c)).toList() : [];
+  //   return noteList;
+  // }
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:notes_app/data/models/note.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:notes_app/data/notes_cubit.dart';
 import 'package:notes_app/screens/add_note.dart';
-import 'package:notes_app/utils/note.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../main.dart';
 
@@ -36,66 +37,57 @@ class _NotesPage extends State<NotesPage> {
           );
         },
         tooltip: 'Add note',
-        child: const Icon(Icons.note_add),
+        child: const Icon(Icons.add),
       ),
       body: Center(
-        child: FutureBuilder<List<Grocery>>(
-            future: DatabaseHelper.instance.getGroceries(),
-            builder:
-                (BuildContext context, AsyncSnapshot<List<Grocery>> snapshot) {
-              if (!snapshot.hasData) {
-                return const Center(child: Text('Loading...'));
-              }
-              return snapshot.data!.isEmpty
-                  ? const Center(child: Text('No Groceries in List.'))
-                  : ListView(
-                      children: snapshot.data!.map((grocery) {
-                        return Center(
-                          child: Card(
-                            // color: selectedId == grocery.id
-                            //     ? Colors.white70
-                            //     : Colors.white,
-                            child: ListTile(
-                              title: Text(grocery.name),
-                              subtitle: Text(grocery.date),
-                              onTap: () {
-                                setState(() {
-                                  // if (selectedId == null) {
-                                  //   textController.text = grocery.name;
-                                  //   selectedId = grocery.id;
-                                  // } else {
-                                  //   textController.text = '';
-                                  //   selectedId = null;
-                                  // }
-                                });
-                              },
-                              onLongPress: () {
-                                setState(() {
-                                  // DatabaseHelper.instance.remove(grocery.id!);
-                                });
-                              },
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    );
-            }),
+        child: BlocBuilder<NotesCubit, NotesService>(
+          builder: ((context, state) {
+            return FutureBuilder<List<Note>>(
+              future: state.findAll(),
+              builder:
+                  (BuildContext context, AsyncSnapshot<List<Note>> snapshot) {
+                if (!snapshot.hasData) {
+                  Future.delayed(const Duration(milliseconds: 5000), () async {
+                    Future<List<Note>> getNotes() async {
+                      Database db = await DatabaseHelper.instance.database;
+                      var notes = await db.query('notes');
+                      List<Note> noteList = notes.isNotEmpty
+                          ? notes.map((c) => Note.fromMap(c)).toList()
+                          : [];
+
+                      print(noteList.first.content);
+                      return noteList;
+                    }
+
+                    getNotes();
+                  });
+                  return const Center(
+                    child: Text('Loading...'),
+                  );
+                }
+                return snapshot.data!.isEmpty
+                    ? const Center(child: Text('No notes in List.'))
+                    : ListView(
+                        children: snapshot.data!.map(
+                          (note) {
+                            return Center(
+                              child: Card(
+                                child: ListTile(
+                                  title: Text(note.content),
+                                  subtitle: Text(
+                                    note.createdAt,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ).toList(),
+                      );
+              },
+            );
+          }),
+        ),
       ),
-      // body: ListView.builder(
-      //   shrinkWrap: true,
-      //   itemCount: vibeItems.length,
-      //   itemBuilder: (BuildContext context, int index) {
-      //     return ListTile(
-      //       leading: const Icon(Icons.list),
-      //       trailing: Text(
-      //         vibeItems[index].date,
-      //       ),
-      //       title: Text(
-      //         vibeItems[index].note,
-      //       ),
-      //     );
-      //   },
-      // ),
     );
   }
 }

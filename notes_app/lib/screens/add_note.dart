@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:notes_app/data/models/note.dart';
+import 'package:notes_app/data/notes_cubit.dart';
 import 'package:notes_app/main.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -22,34 +22,56 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         centerTitle: true,
         actions: [
           TextButton(
-            child: const Text('Save'),
-            onPressed: () {
-              print(noteController.text);
-              print(DateTime.now());
-
-              Future<int> add(Grocery grocery) async {
+            onPressed: () async {
+              Future<List<Note>> getNotes() async {
                 Database db = await DatabaseHelper.instance.database;
-                return await db.insert('notes', grocery.toMap());
+                var notes = await db.query('notes');
+                List<Note> noteList = notes.isNotEmpty
+                    ? notes.map((c) => Note.fromMap(c)).toList()
+                    : [];
+
+                print(noteList);
+                return noteList;
               }
 
-              add(Grocery(
-                  date: DateTime.now().toIso8601String(),
-                  name: noteController.text));
+              getNotes();
+            },
+            child: const Text('Read'),
+          ),
+          TextButton(
+            child: const Text('Save'),
+            onPressed: () {
+              Future add(Note note) async {
+                Database db = await DatabaseHelper.instance.database;
+
+                return await db.insert('notes', note.toMap());
+              }
+
+              add(
+                Note(
+                  createdAt: DateTime.now().toIso8601String(),
+                  content: noteController.text,
+                  // id: '',
+                ),
+              );
 
               setState(() {});
             },
           )
         ],
       ),
-      body: Center(
-        child: TextFormField(
-          controller: noteController,
-          minLines: 3,
-          maxLines: 10,
-          decoration: const InputDecoration(
-            labelText: 'Note ...',
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          TextFormField(
+            controller: noteController,
+            minLines: 3,
+            maxLines: 100,
+            decoration: const InputDecoration(
+              labelText: 'Note ...',
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
